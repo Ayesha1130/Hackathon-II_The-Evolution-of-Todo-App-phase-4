@@ -1,0 +1,112 @@
+{{- $daprEnabled := .Values.dapr.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo.fullname" . }}-backend
+  labels:
+    {{- include "todo.labels" . | nindent 4 }}
+    app: {{ include "todo.fullname" . }}-backend
+  {{- if $daprEnabled }}
+  annotations:
+    dapr.io/enabled: "true"
+    dapr.io/app-id: {{ include "todo.fullname" . }}-backend
+    dapr.io/app-port: "{{ .Values.service.backend.port }}"
+    dapr.io/log-level: "info"
+    dapr.io/sidecar-listen-addresses: "0.0.0.0"
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "todo.selectorLabels" . | nindent 6 }}
+      app: {{ include "todo.fullname" . }}-backend
+  template:
+    metadata:
+      labels:
+        {{- include "todo.selectorLabels" . | nindent 8 }}
+        app: {{ include "todo.fullname" . }}-backend
+      {{- if $daprEnabled }}
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ include "todo.fullname" . }}-backend
+        dapr.io/app-port: "{{ .Values.service.backend.port }}"
+        dapr.io/log-level: "info"
+        dapr.io/sidecar-listen-addresses: "0.0.0.0"
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: backend
+          image: "{{ .Values.image.backend.repository }}:{{ .Values.image.backend.tag }}"
+          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.backend.port }}
+          env:
+            - name: DATABASE_HOST
+              value: {{ include "todo.fullname" . }}-postgresql
+            - name: DATABASE_PORT
+              value: "{{ .Values.postgresql.service.port }}"
+            - name: DATABASE_NAME
+              value: "{{ .Values.postgresql.auth.database }}"
+            - name: DATABASE_USER
+              value: "postgres"
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "todo.fullname" . }}-postgres-secrets
+                  key: password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "todo.fullname" . }}-backend-secrets
+                  key: secret-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "todo.fullname" . }}-backend-secrets
+                  key: openai-api-key
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backend.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources.backend | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todo.fullname" . }}-backend-service
+  labels:
+    {{- include "todo.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.backend.type }}
+  ports:
+    - port: {{ .Values.service.backend.port }}
+      targetPort: {{ .Values.service.backend.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "todo.fullname" . }}-backend

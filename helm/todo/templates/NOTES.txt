@@ -1,0 +1,49 @@
+Thank you for installing {{ .Chart.Name }}!
+
+This chart deploys the Todo AI Chatbot application with Dapr support.
+
+{{- if .Values.dapr.enabled }}
+DAPR INTEGRATION:
+------------------
+Dapr has been enabled for this deployment. The following Dapr components are configured:
+
+- Kafka PubSub: {{ include "todo.fullname" . }}-kafka-pubsub
+- PostgreSQL State Store: {{ include "todo.fullname" . }}-statestore
+- Reminder Cron Binding: {{ include "todo.fullname" . }}-reminder-cron
+
+Dapr sidecars are injected into:
+- Backend service (app-id: {{ include "todo.fullname" . }}-backend)
+- Frontend service (app-id: {{ include "todo.fullname" . }}-frontend)
+
+To interact with Dapr services, use the Dapr sidecar endpoints:
+- Dapr HTTP endpoint: http://localhost:3500
+- Use Dapr service invocation to call other services
+
+{{- else }}
+DAPR INTEGRATION:
+------------------
+Dapr is currently disabled. To enable Dapr integration, set dapr.enabled=true
+when installing or upgrading the chart.
+{{- end }}
+
+GETTING STARTED:
+---------------
+1. Get the application URL:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+{{- range $host.paths }}
+    {{ .path }}
+  {{- end }}
+{{- end }}
+{{- else }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "todo.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl port-forward $POD_NAME 8080:80
+{{- end }}
+
+2. Check the status of the deployed pods:
+  kubectl get pods
+
+3. Check the status of Dapr components (if enabled):
+  kubectl get components -n {{ .Release.Namespace }}

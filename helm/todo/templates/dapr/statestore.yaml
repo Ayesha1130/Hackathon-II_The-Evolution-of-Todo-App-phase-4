@@ -1,0 +1,26 @@
+{{- if .Values.dapr.enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ include "todo.fullname" . }}-statestore
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+  - name: host
+    value: {{ .Values.dapr.statestore.host | default (include "todo.fullname" . | printf "%s-postgresql") }}
+  - name: port
+    value: {{ .Values.dapr.statestore.port | default "5432" | quote }}
+  - name: databaseName
+    value: {{ .Values.dapr.statestore.databaseName | default "todo_app" }}
+  - name: user
+    value: {{ .Values.dapr.statestore.user | default "postgres" }}
+  - name: password
+    secretKeyRef:
+      name: {{ include "todo.fullname" . }}-postgres-secrets
+      key: password
+  - name: actorStateStore
+    value: {{ .Values.dapr.statestore.actorStateStore | default "true" }}
+auth:
+  secretStore: kubernetes
+{{- end }}

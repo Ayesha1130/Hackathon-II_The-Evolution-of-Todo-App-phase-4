@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-backend
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+    spec:
+      containers:
+      - name: backend
+        image: todo-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8082
+        env:
+        - name: DATABASE_HOST
+          value: "todo-postgresql"
+        - name: DATABASE_PORT
+          value: "5432"
+        - name: DATABASE_NAME
+          value: "todo_app"
+        - name: DATABASE_USER
+          value: "postgres"
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: todo-postgres-secrets
+              key: password
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: todo-backend-secrets
+              key: secret-key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: todo-backend-secrets
+              key: openai-api-key
+              

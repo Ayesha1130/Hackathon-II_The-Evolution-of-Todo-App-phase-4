@@ -1,0 +1,14 @@
+{{- if .Values.dapr.enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ include "todo.fullname" . }}-kafka-pubsub
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers
+    value: {{ .Values.dapr.kafka.brokers | default "kafka:9092" }}
+  - name: authRequired
+    value: {{ .Values.dapr.kafka.authRequired | default "false" }}
+{{- end }}

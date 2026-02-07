@@ -1,0 +1,91 @@
+{{- $daprEnabled := .Values.dapr.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo.fullname" . }}-frontend
+  labels:
+    {{- include "todo.labels" . | nindent 4 }}
+    app: {{ include "todo.fullname" . }}-frontend
+  {{- if $daprEnabled }}
+  annotations:
+    dapr.io/enabled: "true"
+    dapr.io/app-id: {{ include "todo.fullname" . }}-frontend
+    dapr.io/app-port: "{{ .Values.service.frontend.port }}"
+    dapr.io/log-level: "info"
+    dapr.io/sidecar-listen-addresses: "0.0.0.0"
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "todo.selectorLabels" . | nindent 6 }}
+      app: {{ include "todo.fullname" . }}-frontend
+  template:
+    metadata:
+      labels:
+        {{- include "todo.selectorLabels" . | nindent 8 }}
+        app: {{ include "todo.fullname" . }}-frontend
+      {{- if $daprEnabled }}
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ include "todo.fullname" . }}-frontend
+        dapr.io/app-port: "{{ .Values.service.frontend.port }}"
+        dapr.io/log-level: "info"
+        dapr.io/sidecar-listen-addresses: "0.0.0.0"
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
+          imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.frontend.port }}
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://{{ include "todo.fullname" . }}-backend-service:{{ .Values.service.backend.port }}"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.frontend.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.frontend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources.frontend | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todo.fullname" . }}-frontend-service
+  labels:
+    {{- include "todo.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.frontend.type }}
+  ports:
+    - port: {{ .Values.service.frontend.port }}
+      targetPort: {{ .Values.service.frontend.port }}
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "todo.fullname" . }}-frontend

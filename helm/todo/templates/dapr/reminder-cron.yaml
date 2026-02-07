@@ -1,0 +1,12 @@
+{{- if .Values.dapr.enabled }}
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ include "todo.fullname" . }}-reminder-cron
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: schedule
+    value: "{{ .Values.dapr.reminderCron.schedule | default "*/5 * * * *" }}"
+{{- end }}
