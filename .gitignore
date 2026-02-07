@@ -12,7 +12,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-
 lib64/
 parts/
 sdist/
@@ -32,8 +31,6 @@ env/
 bin/
 include/
 
-share/
-
 # Testing
 .pytest_cache/
 .coverage
@@ -45,7 +42,7 @@ coverage.xml
 .ruff_cache/
 
 # ====================
-# Node.js
+# Node.js / Frontend
 # ====================
 node_modules/
 .next/
@@ -89,29 +86,7 @@ Thumbs.db
 *.sqlite3
 *.db
 
-# Python
-__pycache__/
-.pytest_cache/
-*.py[cod]
-.venv/
-env/
-
-# Node/Frontend
-node_modules/
-.next/
-out/
-build/
-.env*
-
-# IDE & OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
+# ====================
 # Project Specific
+# ====================
 .todo_tasks.json
-
-node_modules/
-.next/
-.env.local
