@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: backend
-        image: todo-backend:latest
-        imagePullPolicy: Never
+        image: todo-backend:v6
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8082
         env:
