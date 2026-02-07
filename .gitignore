@@ -111,3 +111,7 @@ Thumbs.db
 
 # Project Specific
 .todo_tasks.json
+
+node_modules/
+.next/
+.env.local
